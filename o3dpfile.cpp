@@ -62,7 +62,7 @@ void O3DPFile::read(QString file){
             voxel_dimension[0+i] = (bboxSize[3+i]-bboxSize[0+i])/gridSize[i];
         }
 
-        grid = QVector<QVector<quint8>>(gridSize[2]);
+        grid = QVector<QByteArray>(gridSize[2]);
         qDebug()<<"allocated grid";
 //        for(int z=0; z<this->gridSize[2]; z++){
 
@@ -79,14 +79,15 @@ void O3DPFile::read(QString file){
 
         for(int z=0; z<this->gridSize[2]; z++){
             qDebug()<<"z:"<<z;
-            QVector<quint8> layer( gridSize[1]*gridSize[0],0);
-            for(int y=0; y<this->gridSize[1]; y++){
-                for(int x=0; x<this->gridSize[0]; x++){
-                    temp = f.read(1);
-                    layer[(y*gridSize[0])+x]=temp.at(0);
-                    //qDebug()<<x<<","<<y<<","<<z<<" :"<<grid[z][y][x];
-                }
-            }
+            QByteArray layer( gridSize[1]*gridSize[0],0);
+            layer = f.read( gridSize[1]*gridSize[0] );
+//            for(int y=0; y<this->gridSize[1]; y++){
+//                for(int x=0; x<this->gridSize[0]; x++){
+//                    temp = f.read(1);
+//                    layer[(y*gridSize[0])+x]=temp.at(0);
+//                    //qDebug()<<x<<","<<y<<","<<z<<" :"<<grid[z][y][x];
+//                }
+//            }
             grid[z] = layer;
         }
 
@@ -146,15 +147,16 @@ if( f.open( QFile::WriteOnly ) ){
     qDebug()<<"wrote header";
     for(int z=0; z<this->gridSize.at(2); z++){
         //qDebug()<<"z";
-        QVector<quint8> layer = grid.at(z);
-        for(int y=0; y<this->gridSize.at(1); y++){
-            for(int x=0; x<this->gridSize.at(0); x++){
-                //qDebug()<<"z"<<z<<"y"<<y<<"x"<<x;
-                uint8_t Iarr[1] = {layer[(y*gridSize[0])+x] };
-                char *arr = (char*) Iarr;
-                f.write(arr,1);
-            }
-        }
+        QByteArray layer = grid.at(z);
+        f.write(layer);
+//        for(int y=0; y<this->gridSize.at(1); y++){
+//            for(int x=0; x<this->gridSize.at(0); x++){
+//                //qDebug()<<"z"<<z<<"y"<<y<<"x"<<x;
+//                uint8_t Iarr[1] = {layer[(y*gridSize[0])+x] };
+//                char *arr = (char*) Iarr;
+//                f.write(arr,1);
+//            }
+//        }
     }
     qDebug()<<"wrote grid";
     f.close();
