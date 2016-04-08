@@ -8,16 +8,28 @@
 #include <iostream>
 #include <fstream>
 
-O3DPFile::O3DPFile(QObject *parent) : QObject(parent)
+O3DPFile::O3DPFile(QString file,QObject *parent) : QObject(parent)
 {
     voxel_dimension = QVector<float>(3,0.0);
     gridSize = QVector<long>(3,0.0);
     bboxSize = QVector<double>(6,0.0);
     num_mat = 0;
+    f = new QFile(file);
+
+}
+
+O3DPFile::O3DPFile(QString file, QVector<long> gridsize,QVector<double> bbox, QObject *parent) : QObject(parent)
+{
+    voxel_dimension = QVector<float>(3,0.0);
+    gridSize = gridsize;
+    bboxSize = bbox;
+    num_mat = 0;
+    f = new QFile(file);
+
 }
 
 
-void O3DPFile::read(QString file){
+void O3DPFile::readHeader(){
     QString cookie = "#OpenFab3DP V1.0 Binary";
     int headercount = cookie.length();
     int n_grid_size_units = 3;
@@ -30,28 +42,27 @@ void O3DPFile::read(QString file){
     headercount += n_bbox_units*bbox_unit;
     headercount += n_mat_len;
 
-    QFile f(file);
-    if (f.open(QIODevice::ReadOnly) ){
-        QByteArray cookarray = f.read(cookie.length());
+    if (f->open(QIODevice::ReadOnly) ){
+        QByteArray cookarray = f->read(cookie.length());
         QString readcookie = QString::fromStdString(cookarray.toStdString());
         qDebug()<<"read cookie: "<<readcookie;
 
         QByteArray temp;
         // load int32 grid_val
         for(int i=0;i<n_grid_size_units;i++){
-            temp = f.read(grid_size_unit);
+            temp = f->read(grid_size_unit);
             long grid_val = *(long*)temp.data();
             this->gridSize[i]=grid_val;
         }
         // load float64
         for(int i=0;i<n_bbox_units;i++){
-            temp = f.read(bbox_unit);
+            temp = f->read(bbox_unit);
             double bbox_val;
             bbox_val = *(double*)temp.data();
             this->bboxSize[i]=bbox_val;
         }
         // load num mat
-        temp = f.read(n_mat_len);
+        temp = f->read(n_mat_len);
         num_mat = *(int*)temp.data();
 
         qDebug()<<"Gridsize: "<<this->gridSize;
@@ -61,46 +72,56 @@ void O3DPFile::read(QString file){
         for(int i=0;i<3;i++){
             voxel_dimension[0+i] = (bboxSize[3+i]-bboxSize[0+i])/gridSize[i];
         }
+        f->close();
+    }
+    nheaderbytes = headercount;
 
+}
+
+
+bool O3DPFile::setLayer(int layer_index,QByteArray layer){
+    if (layer.length() != gridSize[0]*gridSize[1]){return false;}
+
+    if (grid.length()>layer_index){
+        grid[layer_index] = layer;
+        return true;
+    }
+    return false;
+}
+
+
+QByteArray O3DPFile::layer(int layer){
+    // if a layer is in memory return it
+    if (grid.length()>layer){return grid[layer];}
+
+    // else load the layer and return it
+    if (f->open(QIODevice::ReadOnly) ){
+        f->seek(nheaderbytes);
+        f->seek(layer*gridSize[1]*gridSize[0]);
+        QByteArray bytelayer( gridSize[1]*gridSize[0],0);
+        bytelayer = f->read( layer*gridSize[1]*gridSize[0] );
+        f->close();
+        return bytelayer;
+    }
+    return QByteArray();
+}
+
+void O3DPFile::readAll(){
+    readHeader();
+    if (f->open(QIODevice::ReadOnly) ){
+        f->seek(nheaderbytes);
         grid = QVector<QByteArray>(gridSize[2]);
-        qDebug()<<"allocated grid";
-//        for(int z=0; z<this->gridSize[2]; z++){
-
-//            QVector< QVector<quint8>>cols(gridSize[1]);
-//            for(int y=0; y<this->gridSize[1]; y++){
-
-//                QVector<quint8>row(gridSize[0],1);
-//                cols[y] = row;
-//            }
-//            grid[z]=cols;
-//        }
-
-
 
         for(int z=0; z<this->gridSize[2]; z++){
             qDebug()<<"z:"<<z;
             QByteArray layer( gridSize[1]*gridSize[0],0);
-            layer = f.read( gridSize[1]*gridSize[0] );
-//            for(int y=0; y<this->gridSize[1]; y++){
-//                for(int x=0; x<this->gridSize[0]; x++){
-//                    temp = f.read(1);
-//                    layer[(y*gridSize[0])+x]=temp.at(0);
-//                    //qDebug()<<x<<","<<y<<","<<z<<" :"<<grid[z][y][x];
-//                }
-//            }
+            layer = f->read( gridSize[1]*gridSize[0] );
             grid[z] = layer;
         }
 
         qDebug()<<"Read";
-        f.close();
+        f->close();
     }
-/*
- *  QVector< QVector< QVector<quint8> > > grid;
-    QVector<qint32> gridSize;
-    QVector<double> bboxSize;
-    quint32 num_mat;
-    QVector<float> voxel_dimension;
-*/
 
 
 }
@@ -115,8 +136,8 @@ fwrite(file, numMaterials, 'uint32'); %leave unchanged'''
 */
 
 
-QFile f(file);
-if( f.open( QFile::WriteOnly ) ){
+QFile fw(file);
+if( fw.open( QFile::WriteOnly ) ){
 
     int grid_size_unit = 4;
     int bbox_unit = 8;
@@ -124,42 +145,33 @@ if( f.open( QFile::WriteOnly ) ){
 
     QString cookie("#OpenFab3DP V1.0 Binary");
 
-    f.write(cookie.toStdString().c_str(),cookie.length());
-
+    fw.write(cookie.toStdString().c_str(),cookie.length());
     for (int i=0; i<this->gridSize.length();i++){
         long Iarr[1] = { gridSize.at(i) };
         char *arr = (char*) Iarr;
-        f.write(arr,grid_size_unit);
+        fw.write(arr,grid_size_unit);
     }
+
     qDebug()<<"wrote gridsize";
     for (int i=0; i<this->bboxSize.length();i++){
         double darr[1] = { bboxSize.at(i) };
         char *arr = (char*) darr;
-        f.write(arr,bbox_unit);
+        fw.write(arr,bbox_unit);
     }
 
     //mat
     uint32_t Iarr[1] = { num_mat };
     char *arr = (char*) Iarr;
-    f.write(arr,n_mat_len);
-
+    fw.write(arr,n_mat_len);
 
     qDebug()<<"wrote header";
     for(int z=0; z<this->gridSize.at(2); z++){
         //qDebug()<<"z";
         QByteArray layer = grid.at(z);
-        f.write(layer);
-//        for(int y=0; y<this->gridSize.at(1); y++){
-//            for(int x=0; x<this->gridSize.at(0); x++){
-//                //qDebug()<<"z"<<z<<"y"<<y<<"x"<<x;
-//                uint8_t Iarr[1] = {layer[(y*gridSize[0])+x] };
-//                char *arr = (char*) Iarr;
-//                f.write(arr,1);
-//            }
-//        }
+        fw.write(layer);
     }
     qDebug()<<"wrote grid";
-    f.close();
+    fw.close();
 }
 
 }

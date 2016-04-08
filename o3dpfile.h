@@ -3,19 +3,26 @@
 
 #include <QObject>
 #include <QVector>
+#include <QFile>
 
 class O3DPFile : public QObject
 {
     Q_OBJECT
 public:
-    explicit O3DPFile(QObject *parent = 0);
+    explicit O3DPFile(QString file, QObject *parent = 0);
+    O3DPFile(QString file, QVector<long> gridsize,QVector<double> bbox, QObject *parent);
 
+    void readHeader();
+    bool setLayer(int layer_index,QByteArray layer);
+    QByteArray layer(int layer);
 
 public slots:
-    void read(QString file);
+    void readAll();
     void write(QString file);
 
 public:
+    QFile* f;
+    int nheaderbytes;
     QVector<QByteArray> grid;
     QVector<long> gridSize;
     QVector<double> bboxSize;

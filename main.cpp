@@ -4,8 +4,8 @@
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
-    O3DPFile f;
-    f.read("Fingers.o3dp");
+    O3DPFile f("Fingers.o3dp");
+    f.readAll();
     f.write("test.o3dp");
     return a.exec();
 }

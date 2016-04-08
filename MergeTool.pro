@@ -10,7 +10,9 @@ CONFIG -= app_bundle
 TEMPLATE = app
 
 SOURCES += main.cpp \
-    o3dpfile.cpp
+    o3dpfile.cpp \
+    mergefiles.cpp
 
 HEADERS += \
-    o3dpfile.h
+    o3dpfile.h \
+    mergefiles.h
