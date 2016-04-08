@@ -61,28 +61,33 @@ void O3DPFile::read(QString file){
         for(int i=0;i<3;i++){
             voxel_dimension[0+i] = (bboxSize[3+i]-bboxSize[0+i])/gridSize[i];
         }
+
+        grid = QVector<QVector<quint8>>(gridSize[2]);
+        qDebug()<<"allocated grid";
+//        for(int z=0; z<this->gridSize[2]; z++){
+
+//            QVector< QVector<quint8>>cols(gridSize[1]);
+//            for(int y=0; y<this->gridSize[1]; y++){
+
+//                QVector<quint8>row(gridSize[0],1);
+//                cols[y] = row;
+//            }
+//            grid[z]=cols;
+//        }
+
+
+
         for(int z=0; z<this->gridSize[2]; z++){
-
-            QVector< QVector<quint8>>cols(gridSize[1]);
-            for(int y=0; y<this->gridSize[1]; y++){
-
-                QVector<quint8>row(gridSize[0],1);
-                cols[y] = row;
-            }
-            grid.append(cols);
-        }
-
-
-
-        for(int z=0; z<this->gridSize[2]; z++){
-            //qDebug()<<"z:"<<z;
+            qDebug()<<"z:"<<z;
+            QVector<quint8> layer( gridSize[1]*gridSize[0],0);
             for(int y=0; y<this->gridSize[1]; y++){
                 for(int x=0; x<this->gridSize[0]; x++){
                     temp = f.read(1);
-                    grid[z][y][x]=temp.at(0);
+                    layer[(y*gridSize[0])+x]=temp.at(0);
                     //qDebug()<<x<<","<<y<<","<<z<<" :"<<grid[z][y][x];
                 }
             }
+            grid[z] = layer;
         }
 
         qDebug()<<"Read";
@@ -141,10 +146,11 @@ if( f.open( QFile::WriteOnly ) ){
     qDebug()<<"wrote header";
     for(int z=0; z<this->gridSize.at(2); z++){
         //qDebug()<<"z";
+        QVector<quint8> layer = grid.at(z);
         for(int y=0; y<this->gridSize.at(1); y++){
             for(int x=0; x<this->gridSize.at(0); x++){
                 //qDebug()<<"z"<<z<<"y"<<y<<"x"<<x;
-                uint8_t Iarr[1] = { grid[z][y][x] };
+                uint8_t Iarr[1] = {layer[(y*gridSize[0])+x] };
                 char *arr = (char*) Iarr;
                 f.write(arr,1);
             }

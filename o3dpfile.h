@@ -16,14 +16,12 @@ public slots:
     void write(QString file);
 
 public:
-    QVector< QVector< QVector<quint8> > > grid;
+    QVector<QVector<quint8>> grid;
     QVector<long> gridSize;
     QVector<double> bboxSize;
     quint32 num_mat;
     QVector<float> voxel_dimension;
 };
 
-QByteArray invertArray(QByteArray array);
-long qbytearrayToLong(QByteArray array);
 
 #endif // O3DPFILE_H
