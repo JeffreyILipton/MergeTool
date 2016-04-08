@@ -7,8 +7,8 @@ void mergeFiles(QString XMLFile);
 
 
 struct fileWithLocation{
-    O3DPFile o3dp;
+    O3DPFile* o3dp;
     QVector<int> indices;
-}
+};
 
 #endif // MERGEFILES_H

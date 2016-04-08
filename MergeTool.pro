@@ -16,3 +16,6 @@ SOURCES += main.cpp \
 HEADERS += \
     o3dpfile.h \
     mergefiles.h
+
+DISTFILES += \
+    XMLExample.xml

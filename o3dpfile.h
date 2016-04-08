@@ -9,8 +9,8 @@ class O3DPFile : public QObject
 {
     Q_OBJECT
 public:
-    explicit O3DPFile(QString file, QObject *parent = 0);
-    O3DPFile(QString file, QVector<long> gridsize,QVector<double> bbox, QObject *parent);
+    O3DPFile(QString file, QObject *parent = 0);
+    O3DPFile(QString file, QVector<long> gridsize,QVector<double> bbox, QObject *parent =0);
 
     void readHeader();
     bool setLayer(int layer_index,QByteArray layer);

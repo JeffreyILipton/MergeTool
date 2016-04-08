@@ -15,6 +15,8 @@ O3DPFile::O3DPFile(QString file,QObject *parent) : QObject(parent)
     bboxSize = QVector<double>(6,0.0);
     num_mat = 0;
     f = new QFile(file);
+    grid = QVector<QByteArray>();
+    readHeader();
 
 }
 
@@ -25,6 +27,8 @@ O3DPFile::O3DPFile(QString file, QVector<long> gridsize,QVector<double> bbox, QO
     bboxSize = bbox;
     num_mat = 0;
     f = new QFile(file);
+    grid = QVector<QByteArray>(gridsize[2]);
+    readHeader();
 
 }
 
@@ -99,7 +103,7 @@ QByteArray O3DPFile::layer(int layer){
         f->seek(nheaderbytes);
         f->seek(layer*gridSize[1]*gridSize[0]);
         QByteArray bytelayer( gridSize[1]*gridSize[0],0);
-        bytelayer = f->read( layer*gridSize[1]*gridSize[0] );
+        bytelayer = f->read( gridSize[1]*gridSize[0] );
         f->close();
         return bytelayer;
     }
