@@ -31,61 +31,63 @@ void O3DPFile::read(QString file){
     headercount += n_mat_len;
 
     QFile f(file);
-    f.open(QIODevice::ReadOnly);
-    QByteArray cookarray = f.read(cookie.length());
-    QString readcookie = QString::fromStdString(cookarray.toStdString());
-    qDebug()<<"read cookie: "<<readcookie;
+    if (f.open(QIODevice::ReadOnly) ){
+        QByteArray cookarray = f.read(cookie.length());
+        QString readcookie = QString::fromStdString(cookarray.toStdString());
+        qDebug()<<"read cookie: "<<readcookie;
 
-    QByteArray temp;
-    // load int32 grid_val
-    for(int i=0;i<n_grid_size_units;i++){
-        temp = f.read(grid_size_unit);
-        long grid_val = *(long*)temp.data();
-        this->gridSize[i]=grid_val;
-    }
-    // load float64
-    for(int i=0;i<n_bbox_units;i++){
-        temp = f.read(bbox_unit);
-        double bbox_val;
-        bbox_val = *(double*)temp.data();
-        this->bboxSize[i]=bbox_val;
-    }
-    // load num mat
-    temp = f.read(n_mat_len);
-    num_mat = *(int*)temp.data();
-
-    qDebug()<<"Gridsize: "<<this->gridSize;
-    qDebug()<<"bbox:" <<this->bboxSize;
-    qDebug()<<"nmat:"<< this->num_mat;
-
-    for(int i=0;i<3;i++){
-        voxel_dimension[0+i] = (bboxSize[3+i]-bboxSize[0+i])/gridSize[i];
-    }
-    for(int z=0; z<this->gridSize[2]; z++){
-
-        QVector< QVector<quint8>>cols(gridSize[1]);
-        for(int y=0; y<this->gridSize[1]; y++){
-
-            QVector<quint8>row(gridSize[0],1);
-            cols[y] = row;
+        QByteArray temp;
+        // load int32 grid_val
+        for(int i=0;i<n_grid_size_units;i++){
+            temp = f.read(grid_size_unit);
+            long grid_val = *(long*)temp.data();
+            this->gridSize[i]=grid_val;
         }
-        grid.append(cols);
-    }
+        // load float64
+        for(int i=0;i<n_bbox_units;i++){
+            temp = f.read(bbox_unit);
+            double bbox_val;
+            bbox_val = *(double*)temp.data();
+            this->bboxSize[i]=bbox_val;
+        }
+        // load num mat
+        temp = f.read(n_mat_len);
+        num_mat = *(int*)temp.data();
+
+        qDebug()<<"Gridsize: "<<this->gridSize;
+        qDebug()<<"bbox:" <<this->bboxSize;
+        qDebug()<<"nmat:"<< this->num_mat;
+
+        for(int i=0;i<3;i++){
+            voxel_dimension[0+i] = (bboxSize[3+i]-bboxSize[0+i])/gridSize[i];
+        }
+        for(int z=0; z<this->gridSize[2]; z++){
+
+            QVector< QVector<quint8>>cols(gridSize[1]);
+            for(int y=0; y<this->gridSize[1]; y++){
+
+                QVector<quint8>row(gridSize[0],1);
+                cols[y] = row;
+            }
+            grid.append(cols);
+        }
 
 
 
-    for(int z=0; z<this->gridSize[2]; z++){
-        qDebug()<<"z:"<<z;
-        for(int y=0; y<this->gridSize[1]; y++){
-            for(int x=0; x<this->gridSize[0]; x++){
-                temp = f.read(1);
-                grid[z][y][x]=temp.at(0);
-                //qDebug()<<x<<","<<y<<","<<z<<" :"<<grid[z][y][x];
+        for(int z=0; z<this->gridSize[2]; z++){
+            //qDebug()<<"z:"<<z;
+            for(int y=0; y<this->gridSize[1]; y++){
+                for(int x=0; x<this->gridSize[0]; x++){
+                    temp = f.read(1);
+                    grid[z][y][x]=temp.at(0);
+                    //qDebug()<<x<<","<<y<<","<<z<<" :"<<grid[z][y][x];
+                }
             }
         }
+
+        qDebug()<<"Read";
+        f.close();
     }
-
-
 /*
  *  QVector< QVector< QVector<quint8> > > grid;
     QVector<qint32> gridSize;
@@ -109,24 +111,46 @@ fwrite(file, numMaterials, 'uint32'); %leave unchanged'''
 
 QFile f(file);
 if( f.open( QFile::WriteOnly ) ){
-    QDataStream out(&f);
-    out <<"#OpenFab3DP V1.0 Binary";
+
+    int grid_size_unit = 4;
+    int bbox_unit = 8;
+    int n_mat_len = 4;
+
+    QString cookie("#OpenFab3DP V1.0 Binary");
+
+    f.write(cookie.toStdString().c_str(),cookie.length());
+
     for (int i=0; i<this->gridSize.length();i++){
-        out<<(char*)this->gridSize.at(i);
+        long Iarr[1] = { gridSize.at(i) };
+        char *arr = (char*) Iarr;
+        f.write(arr,grid_size_unit);
     }
-
+    qDebug()<<"wrote gridsize";
     for (int i=0; i<this->bboxSize.length();i++){
-        out<<this->bboxSize.at(i);
+        double darr[1] = { bboxSize.at(i) };
+        char *arr = (char*) darr;
+        f.write(arr,bbox_unit);
     }
-    out<<this->num_mat;
 
+    //mat
+    uint32_t Iarr[1] = { num_mat };
+    char *arr = (char*) Iarr;
+    f.write(arr,n_mat_len);
+
+
+    qDebug()<<"wrote header";
     for(int z=0; z<this->gridSize.at(2); z++){
-        for(int y=0; z<this->gridSize.at(1); y++){
-            for(int x=0; x<this->gridSize.at(0); y++){
-                out<<this->grid[z][y][x];
+        //qDebug()<<"z";
+        for(int y=0; y<this->gridSize.at(1); y++){
+            for(int x=0; x<this->gridSize.at(0); x++){
+                //qDebug()<<"z"<<z<<"y"<<y<<"x"<<x;
+                uint8_t Iarr[1] = { grid[z][y][x] };
+                char *arr = (char*) Iarr;
+                f.write(arr,1);
             }
         }
     }
+    qDebug()<<"wrote grid";
     f.close();
 }
 
