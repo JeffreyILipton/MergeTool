@@ -47,17 +47,16 @@ void O3DPFile::read(QString file){
     for(int i=0;i<n_bbox_units;i++){
         temp = f.read(bbox_unit);
         double bbox_val;
-        bbox_val = temp.toDouble();
+        bbox_val = *(double*)temp.data();
         this->bboxSize[i]=bbox_val;
     }
     // load num mat
     temp = f.read(n_mat_len);
-    int tempint= temp.toInt();
-    num_mat = tempint;
+    num_mat = *(int*)temp.data();
 
     qDebug()<<"Gridsize: "<<this->gridSize;
     qDebug()<<"bbox:" <<this->bboxSize;
-
+    qDebug()<<"nmat:"<< this->num_mat;
 
     for(int i=0;i<3;i++){
         voxel_dimension[0+i] = (bboxSize[3+i]-bboxSize[0+i])/gridSize[i];
@@ -73,12 +72,15 @@ void O3DPFile::read(QString file){
         grid.append(cols);
     }
 
+
+
     for(int z=0; z<this->gridSize[2]; z++){
         qDebug()<<"z:"<<z;
         for(int y=0; y<this->gridSize[1]; y++){
             for(int x=0; x<this->gridSize[0]; x++){
                 temp = f.read(1);
                 grid[z][y][x]=temp.at(0);
+                //qDebug()<<x<<","<<y<<","<<z<<" :"<<grid[z][y][x];
             }
         }
     }
@@ -127,6 +129,15 @@ if( f.open( QFile::WriteOnly ) ){
     }
     f.close();
 }
+
+}
+
+QByteArray invertArray(QByteArray array){
+    QByteArray newarray(array.length(),0);
+    for(int i=0; i<array.length(); i++){
+        newarray[array.length()-i]= array.at(i);
+    }
+    return newarray;
 
 }
 

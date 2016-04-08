@@ -23,6 +23,7 @@ public:
     QVector<float> voxel_dimension;
 };
 
+QByteArray invertArray(QByteArray array);
 long qbytearrayToLong(QByteArray array);
 
 #endif // O3DPFILE_H
