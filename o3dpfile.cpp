@@ -3,11 +3,15 @@
 #include <QDataStream>
 #include <QString>
 #include <QDebug>
+#include <qendian.h>
+
+#include <iostream>
+#include <fstream>
 
 O3DPFile::O3DPFile(QObject *parent) : QObject(parent)
 {
     voxel_dimension = QVector<float>(3,0.0);
-    gridSize = QVector<qint32>(3,0.0);
+    gridSize = QVector<long>(3,0.0);
     bboxSize = QVector<double>(6,0.0);
     num_mat = 0;
 }
@@ -17,34 +21,39 @@ void O3DPFile::read(QString file){
     QString cookie = "#OpenFab3DP V1.0 Binary";
     int headercount = cookie.length();
     int n_grid_size_units = 3;
+    int grid_size_unit = 4;
     int n_bbox_units = 6;
+    int bbox_unit = 8;
     int n_mat_len = 4;
 
-    headercount += n_grid_size_units*4;
-    headercount += n_bbox_units*8;
+    headercount += n_grid_size_units*grid_size_unit;
+    headercount += n_bbox_units*bbox_unit;
     headercount += n_mat_len;
 
     QFile f(file);
     f.open(QIODevice::ReadOnly);
-    QDataStream in(&f);
-    QString readcookie;
-    in>>readcookie;
+    QByteArray cookarray = f.read(cookie.length());
+    QString readcookie = QString::fromStdString(cookarray.toStdString());
     qDebug()<<"read cookie: "<<readcookie;
 
+    QByteArray temp;
     // load int32 grid_val
     for(int i=0;i<n_grid_size_units;i++){
-        qint32 grid_val;
-        in>>grid_val;
+        temp = f.read(grid_size_unit);
+        long grid_val = qbytearrayToLong(temp);
         this->gridSize[i]=grid_val;
     }
     // load float64
     for(int i=0;i<n_bbox_units;i++){
+        temp = f.read(bbox_unit);
         double bbox_val;
-        in>>bbox_val;
+        bbox_val = temp.toDouble();
         this->bboxSize[i]=bbox_val;
     }
     // load num mat
-    in>>num_mat;
+    temp = f.read(n_mat_len);
+    int tempint= temp.toInt();
+    num_mat = tempint;
 
     qDebug()<<"Gridsize: "<<this->gridSize;
     qDebug()<<"bbox:" <<this->bboxSize;
@@ -68,7 +77,8 @@ void O3DPFile::read(QString file){
         qDebug()<<"z:"<<z;
         for(int y=0; y<this->gridSize[1]; y++){
             for(int x=0; x<this->gridSize[0]; x++){
-                in>>grid[z][y][x];
+                temp = f.read(1);
+                grid[z][y][x]=temp.at(0);
             }
         }
     }
@@ -100,7 +110,7 @@ if( f.open( QFile::WriteOnly ) ){
     QDataStream out(&f);
     out <<"#OpenFab3DP V1.0 Binary";
     for (int i=0; i<this->gridSize.length();i++){
-        out<<this->gridSize.at(i);
+        //out<<this->gridSize.at(i);
     }
 
     for (int i=0; i<this->bboxSize.length();i++){
@@ -118,4 +128,13 @@ if( f.open( QFile::WriteOnly ) ){
     f.close();
 }
 
+}
+
+
+long qbytearrayToLong(QByteArray buf){
+    long  l =  (unsigned char)buf.at(0) |
+              ( (unsigned char)buf.at(1) << 8L)  |
+              ( (unsigned char)buf.at(2) << 16L) |
+              ( (unsigned char)buf.at(3) << 24L);
+    return l;
 }

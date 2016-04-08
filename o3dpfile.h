@@ -17,10 +17,12 @@ public slots:
 
 public:
     QVector< QVector< QVector<quint8> > > grid;
-    QVector<qint32> gridSize;
+    QVector<long> gridSize;
     QVector<double> bboxSize;
     quint32 num_mat;
     QVector<float> voxel_dimension;
 };
+
+long qbytearrayToLong(QByteArray array);
 
 #endif // O3DPFILE_H
