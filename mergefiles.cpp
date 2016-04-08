@@ -2,6 +2,7 @@
 #include <QXmlStreamReader>
 #include <QMap>
 #include <QDebug>
+#include <algorithm>
 
 void mergeFiles(QString XMLFile){
     QString outname;
@@ -10,6 +11,7 @@ void mergeFiles(QString XMLFile){
     QVector<long> outGridSize(3,0);
     QVector<float> voxDims(3,0);
     QVector<double> outBBox(6,0);
+    quint32 nmat = 0;
 
 /// Parse XML into
 ///  - fileWithLocations
@@ -55,6 +57,7 @@ void mergeFiles(QString XMLFile){
                 fileWithLocation loc;
                 loc.o3dp = o3dpfileMap[id];
                 loc.indices = indecies;
+                nmat = std::max(nmat,loc.o3dp->num_mat);
 
                 files.append(loc);
             }
@@ -79,6 +82,7 @@ void mergeFiles(QString XMLFile){
 
 
     O3DPFile OutFile(outname,outGridSize,outBBox);
+    OutFile.num_mat=nmat;
 
     for( int z=0; z<outGridSize[2]; z++){
         QByteArray layer( outGridSize[1]*outGridSize[0],0);
@@ -111,6 +115,7 @@ void mergeFiles(QString XMLFile){
 
     qDebug()<<"generated";
     OutFile.write(outname);
+    qDebug()<<"done writing";
 }
 
 

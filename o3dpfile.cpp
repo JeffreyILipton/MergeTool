@@ -47,6 +47,7 @@ void O3DPFile::readHeader(){
     headercount += n_mat_len;
 
     if (f->open(QIODevice::ReadOnly) ){
+        f->seek(0);
         QByteArray cookarray = f->read(cookie.length());
         QString readcookie = QString::fromStdString(cookarray.toStdString());
         qDebug()<<"read cookie: "<<readcookie;
@@ -100,8 +101,7 @@ QByteArray O3DPFile::layer(int layer){
 
     // else load the layer and return it
     if (f->open(QIODevice::ReadOnly) ){
-        f->seek(nheaderbytes);
-        f->seek(layer*gridSize[1]*gridSize[0]);
+        f->seek(nheaderbytes+layer*gridSize[1]*gridSize[0]);
         QByteArray bytelayer( gridSize[1]*gridSize[0],0);
         bytelayer = f->read( gridSize[1]*gridSize[0] );
         f->close();
