@@ -83,7 +83,7 @@ void mergeFiles(QString XMLFile){
 
     O3DPFile OutFile(outname,outGridSize,outBBox);
     OutFile.num_mat=nmat;
-
+    OutFile.writeHeader();
     for( int z=0; z<outGridSize[2]; z++){
         QByteArray layer( outGridSize[1]*outGridSize[0],0);
 
@@ -109,12 +109,12 @@ void mergeFiles(QString XMLFile){
                 }
             }
         }
-        qDebug()<<"layer:"<<z;
-        OutFile.grid[z] = layer;
+        //OutFile.grid[z] = layer;
+        qDebug()<<"layer:"<<z<<" : "<<OutFile.writeLayer(layer);
     }
 
-    qDebug()<<"generated";
-    OutFile.write(outname);
+    //qDebug()<<"generated";
+    //OutFile.writeAll(outname);
     qDebug()<<"done writing";
 }
 

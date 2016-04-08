@@ -18,4 +18,4 @@ HEADERS += \
     mergefiles.h
 
 DISTFILES += \
-    XMLExample.xml
+    process.xml

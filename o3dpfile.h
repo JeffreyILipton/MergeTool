@@ -18,7 +18,9 @@ public:
 
 public slots:
     void readAll();
-    void write(QString file);
+    void writeAll(QString file);
+    void writeHeader();
+    bool writeLayer(QByteArray Layer);
 
 public:
     QFile* f;

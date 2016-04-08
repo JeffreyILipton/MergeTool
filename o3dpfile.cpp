@@ -28,7 +28,6 @@ O3DPFile::O3DPFile(QString file, QVector<long> gridsize,QVector<double> bbox, QO
     num_mat = 0;
     f = new QFile(file);
     grid = QVector<QByteArray>(gridsize[2]);
-    readHeader();
 
 }
 
@@ -129,7 +128,7 @@ void O3DPFile::readAll(){
 
 
 }
-void O3DPFile::write(QString file){
+void O3DPFile::writeAll(QString file){
 /*%O3DP file format header spec
 file = fopen(filename, 'w');
 fwrite(file, cookie, 'char');   %used as ID by DLL
@@ -180,20 +179,42 @@ if( fw.open( QFile::WriteOnly ) ){
 
 }
 
-QByteArray invertArray(QByteArray array){
-    QByteArray newarray(array.length(),0);
-    for(int i=0; i<array.length(); i++){
-        newarray[array.length()-i]= array.at(i);
+void O3DPFile::writeHeader(){
+    if( f->open( QFile::WriteOnly ) ){
+
+        int grid_size_unit = 4;
+        int bbox_unit = 8;
+        int n_mat_len = 4;
+
+        QString cookie("#OpenFab3DP V1.0 Binary");
+
+        f->write(cookie.toStdString().c_str(),cookie.length());
+        for (int i=0; i<this->gridSize.length();i++){
+            long Iarr[1] = { gridSize.at(i) };
+            char *arr = (char*) Iarr;
+            f->write(arr,grid_size_unit);
+        }
+
+        qDebug()<<"wrote gridsize";
+        for (int i=0; i<this->bboxSize.length();i++){
+            double darr[1] = { bboxSize.at(i) };
+            char *arr = (char*) darr;
+            f->write(arr,bbox_unit);
+        }
+
+        //mat
+        uint32_t Iarr[1] = { num_mat };
+        char *arr = (char*) Iarr;
+        f->write(arr,n_mat_len);
+        f->close();
     }
-    return newarray;
-
 }
+bool O3DPFile::writeLayer(QByteArray Layer){
+    if( f->open( QIODevice::Append ) ){
+        bool worked = f->write(Layer)==Layer.length();
 
-
-long qbytearrayToLong(QByteArray buf){
-    long  l =  (unsigned char)buf.at(0) |
-              ( (unsigned char)buf.at(1) << 8L)  |
-              ( (unsigned char)buf.at(2) << 16L) |
-              ( (unsigned char)buf.at(3) << 24L);
-    return l;
+        f->close();
+        return worked;
+    }
+    return false;
 }

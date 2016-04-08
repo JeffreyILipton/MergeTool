@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<merge>
+    <files>
+        <inputfile id="0">fingertip-solid.o3dp</inputfile>
+        <inputfile id="1">fingertip-linear-25p.o3dp</inputfile>
+    </files>
+    <output>
+        <filename>outfile.o3dp</filename>
+        <gridsize x="1346"  y="556"  z="1377"/>
+        <voxeldims x="0.043"  y="0.081"  z="0.0301"/>
+        <insertfile id = "0" x="0"  y="0"  z="0"/>
+        <insertfile id = "0" x="723"  y="0"  z="0"/>
+		<insertfile id = "1" x="0"  y="328"  z="0"/>
+        <insertfile id = "1" x="723"  y="328"  z="0"/>
+    </output>
+</merge>
