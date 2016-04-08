@@ -16,7 +16,7 @@ public slots:
     void write(QString file);
 
 public:
-    QVector<QVector<quint8>> grid;
+    QVector<QByteArray> grid;
     QVector<long> gridSize;
     QVector<double> bboxSize;
     quint32 num_mat;
