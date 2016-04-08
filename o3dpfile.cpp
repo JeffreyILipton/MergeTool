@@ -40,7 +40,7 @@ void O3DPFile::read(QString file){
     // load int32 grid_val
     for(int i=0;i<n_grid_size_units;i++){
         temp = f.read(grid_size_unit);
-        long grid_val = qbytearrayToLong(temp);
+        long grid_val = *(long*)temp.data();
         this->gridSize[i]=grid_val;
     }
     // load float64
@@ -112,7 +112,7 @@ if( f.open( QFile::WriteOnly ) ){
     QDataStream out(&f);
     out <<"#OpenFab3DP V1.0 Binary";
     for (int i=0; i<this->gridSize.length();i++){
-        //out<<this->gridSize.at(i);
+        out<<(char*)this->gridSize.at(i);
     }
 
     for (int i=0; i<this->bboxSize.length();i++){
