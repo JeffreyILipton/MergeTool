@@ -2,12 +2,13 @@
 #define MERGEFILES_H
 
 #include "o3dpfile.h"
+#include "o3dpstreamer.h"
 
 void mergeFiles(QString XMLFile);
 
 
 struct fileWithLocation{
-    O3DPFile* o3dp;
+    O3DPStreamer* o3dp;
     QVector<int> indices;
 };
 

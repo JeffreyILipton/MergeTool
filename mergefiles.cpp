@@ -6,7 +6,7 @@
 
 void mergeFiles(QString XMLFile){
     QString outname;
-    QMap<int,O3DPFile*> o3dpfileMap;
+    QMap<int,O3DPStreamer*> o3dpfileMap;
     QVector<fileWithLocation> files;
     QVector<long> outGridSize(3,0);
     QVector<float> voxDims(3,0);
@@ -44,7 +44,7 @@ void mergeFiles(QString XMLFile){
             if(xml.name() == "inputfile"){
                 int id = xml.attributes().value("id").toInt();
                 QString filename = xml.readElementText();
-                O3DPFile* input = new O3DPFile(filename);
+                O3DPStreamer* input = new O3DPStreamer(filename);
                 o3dpfileMap[id] = input;
             }
             if (xml.name() == "insertfile"){
@@ -81,7 +81,7 @@ void mergeFiles(QString XMLFile){
 
 
 
-    O3DPFile OutFile(outname,outGridSize,outBBox);
+    O3DPStreamer OutFile(outname,QIODevice::WriteOnly,outGridSize,outBBox);
     OutFile.num_mat=nmat;
     OutFile.writeHeader();
     for( int z=0; z<outGridSize[2]; z++){
@@ -93,7 +93,7 @@ void mergeFiles(QString XMLFile){
             if( (file_layer_number > -1) &&
                 (file_layer_number < files.at(f).o3dp->gridSize[2]) ){
                 // get the layer
-                QByteArray fileLayer = files.at(f).o3dp->layer(file_layer_number);
+                QByteArray fileLayer = files.at(f).o3dp->readLayer(file_layer_number);
 
                 // for each row write out
                 for (int y=0;y<files.at(f).o3dp->gridSize[1];y++){
@@ -112,7 +112,12 @@ void mergeFiles(QString XMLFile){
         //OutFile.grid[z] = layer;
         qDebug()<<"layer:"<<z<<" : "<<OutFile.writeLayer(layer);
     }
-
+    OutFile.close();
+    QList<int> keys = o3dpfileMap.keys();
+    for(int k=0; k<keys.length();k++){
+        int key = keys[k];
+        o3dpfileMap[key]->close();
+    }
     //qDebug()<<"generated";
     //OutFile.writeAll(outname);
     qDebug()<<"done writing";
